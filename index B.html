@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Chosen Palette: Neutral Tech -->
+    <!-- Application Structure Plan: The application is designed as a single-page, narrative-driven report that guides the user from the project's introduction to an interactive conclusion. The structure follows a logical story: 1. Introduction (What's the problem?). 2. The Process (How did we approach it?). 3. Model Showdown (Which tool did we test?). 4. Deep Dive (How does the chosen tool work?). 5. Interactive Demo (Try it yourself.). 6. Conclusion (What did we achieve?). This linear, scrolling structure was chosen over a complex dashboard because it is highly intuitive for presenting a project's findings, making the information easily digestible for a broad audience without requiring prior knowledge. Key interactions are intentionally placed at points of comparison (chart hover) and application (live classifier) to maximize engagement and understanding. -->
+    <!-- Visualization & Content Choices: 1. Project Stats (e.g., Accuracy): Goal: Inform -> Method: Large text stat cards -> Interaction: None -> Justification: Highlights key performance indicators immediately. 2. Model Comparison: Goal: Compare -> Viz: Horizontal Bar Chart (Chart.js Canvas) -> Interaction: Hover tooltips for precise values -> Justification: Provides a clear, at-a-glance comparison of model performance. 3. Confusion Matrix: Goal: Analyze/Evaluate -> Viz: Styled HTML Table (Heatmap style) -> Interaction: Hover tooltips for cell descriptions -> Justification: More accessible and easier to style responsively than a canvas-based heatmap, clearly shows model's specific successes and failures. 4. Top Keywords: Goal: Explain/Inform -> Method: Three-column text layout -> Interaction: None -> Justification: Directly answers "how does it work?" by showing the model's learned features in a clean, readable format. 5. Live Classifier: Goal: Engage/Demonstrate -> Method: HTML form with JS logic -> Interaction: User input and button click -> Justification: Provides a hands-on experience, making the abstract concept of classification tangible and proving the model's capability. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Interactive Report: Automatic News Classification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        .highlight {
+            background-color: #dbeafe;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Header -->
+        <header class="text-center py-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">Automatic News Classification</h1>
+            <p class="mt-4 text-lg text-slate-600">An interactive report on teaching machines to understand text.</p>
+        </header>
+
+        <!-- Introduction -->
+        <section id="intro" class="my-12 p-8 bg-white rounded-xl shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">From Raw Text to Intelligent Insights</h2>
+            <p class="text-slate-600 leading-relaxed">Have you ever wondered how your news feed knows exactly what you're interested in? The answer is a powerful technology called text classification. This report details a project to build a machine learning model that automatically reads a news article and classifies it into one of three categories: <span class="font-semibold text-indigo-600">Technology</span>, <span class="font-semibold text-amber-600">Sports</span>, or <span class="font-semibold text-sky-600">Politics</span>. We'll explore the data, compare different models, dive into the results, and even let you try the classifier yourself.</p>
+        </section>
+
+        <!-- The Process -->
+        <section id="process" class="my-12">
+            <h2 class="text-3xl font-bold text-slate-800 text-center mb-8">The Machine Learning Pipeline</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                <div class="flex flex-col items-center p-4">
+                    <div class="bg-indigo-100 text-indigo-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl">📊</div>
+                    <h3 class="font-semibold mt-4 mb-2">Data</h3>
+                    <p class="text-sm text-slate-500">Used ~2,700 articles from the '20 Newsgroups' dataset.</p>
+                </div>
+                <div class="flex items-center justify-center text-slate-300 text-2xl font-light hidden md:flex">→</div>
+                <div class="flex flex-col items-center p-4">
+                    <div class="bg-indigo-100 text-indigo-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl">⚙️</div>
+                    <h3 class="font-semibold mt-4 mb-2">Feature Extraction</h3>
+                    <p class="text-sm text-slate-500">Converted text to numbers using TF-IDF to find key words.</p>
+                </div>
+                 <div class="flex items-center justify-center text-slate-300 text-2xl font-light hidden md:flex">→</div>
+                <div class="flex flex-col items-center p-4">
+                    <div class="bg-indigo-100 text-indigo-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl">🧠</div>
+                    <h3 class="font-semibold mt-4 mb-2">Model Training</h3>
+                    <p class="text-sm text-slate-500">Trained three different algorithms to find the best performer.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Model Showdown -->
+        <section id="showdown" class="my-12 p-8 bg-white rounded-xl shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Model Showdown</h2>
+            <p class="text-slate-600 mb-6">We trained and tested three different models to find the most accurate classifier. While all performed well, the Support Vector Machine (SVM) proved to be the most effective, achieving the highest cross-validation accuracy. Hover over the bars to see the exact scores.</p>
+            <div class="chart-container">
+                <canvas id="modelAccuracyChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Results & Insights -->
+        <section id="results" class="my-12">
+            <h2 class="text-3xl font-bold text-slate-800 text-center mb-8">Deep Dive into the Winning Model</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Final Performance & Confusion Matrix -->
+                <div class="p-8 bg-white rounded-xl shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">Final Performance: How Well Did It Do?</h3>
+                    <div class="text-center bg-slate-50 p-6 rounded-lg mb-6">
+                        <span class="text-5xl font-bold text-indigo-600">98%</span>
+                        <p class="text-slate-600 font-medium mt-1">Overall Accuracy on New Data</p>
+                    </div>
+
+                    <h4 class="font-semibold text-slate-700 mb-2">Confusion Matrix</h4>
+                    <p class="text-sm text-slate-500 mb-4">This grid shows the model's predictions. The bright diagonal line shows correct classifications. The darker squares are the few mistakes it made.</p>
+                    <div id="confusionMatrix" class="text-xs text-center"></div>
+                </div>
+
+                <!-- Feature Importance -->
+                <div class="p-8 bg-white rounded-xl shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">What Words Matter Most?</h3>
+                    <p class="text-slate-600 mb-6">This is where it gets interesting. By looking inside the model, we can see the exact words it uses to make decisions. This confirms our model isn't just guessing; it's learning the language of each topic.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-amber-600 border-b-2 border-amber-200 pb-1 mb-2">Sports</h4>
+                            <ul id="sportsKeywords" class="space-y-1 text-sm text-slate-600"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-sky-600 border-b-2 border-sky-200 pb-1 mb-2">Politics</h4>
+                            <ul id="politicsKeywords" class="space-y-1 text-sm text-slate-600"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-indigo-600 border-b-2 border-indigo-200 pb-1 mb-2">Technology</h4>
+                            <ul id="techKeywords" class="space-y-1 text-sm text-slate-600"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Interactive Demo -->
+        <section id="demo" class="my-12 p-8 bg-white rounded-xl shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Try the Classifier!</h2>
+            <p class="text-slate-600 mb-6">Now, let's see it in action. Type or paste a sentence or short article into the box below and see how the model classifies it. Our interactive demo uses a simplified keyword-based logic to simulate how the real model makes decisions.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <textarea id="textInput" class="w-full h-48 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Enter text here..."></textarea>
+                    <button id="classifyBtn" class="mt-4 w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">Classify Text</button>
+                </div>
+                <div id="resultOutput" class="bg-slate-50 rounded-lg p-6">
+                    <h3 class="font-semibold text-slate-800 mb-2">Result</h3>
+                    <div id="classificationResult" class="text-2xl font-bold">&nbsp;</div>
+                    <div id="confidence" class="text-sm text-slate-500 mb-4">&nbsp;</div>
+                    <h4 class="font-semibold text-slate-800 text-sm mt-4 mb-2">Keywords Found:</h4>
+                    <p id="foundKeywords" class="text-sm text-slate-600 leading-relaxed"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 text-sm text-slate-500">
+            <p>Interactive Report generated from the Automatic News Classification Project.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATA ---
+            const modelData = {
+                labels: ['Naive Bayes', 'Logistic Regression', 'Support Vector Machine (SVM)'],
+                accuracies: [95.1, 93.8, 97.8]
+            };
+
+            const confusionMatrixData = [
+                [193, 1, 1],
+                [2, 145, 4],
+                [1, 2, 189]
+            ];
+            const matrixLabels = ['Sports', 'Politics', 'Technology'];
+
+            const keywordData = {
+                sports: ['hockey', 'game', 'team', 'nhl', 'play', 'season', 'players', 'games', 'league', 'ca', 'year', 'toronto', 'ice', 'he', 'is'],
+                politics: ['gov', 'president', 'mr', 'people', 'law', 'government', 'state', 'think', 'clinton', 'keys', 'encryption', 'federal', 'chip', 'would', 'gun'],
+                tech: ['power', 'ground', 'wire', 'circuit', 'use', 'hi', 'current', 'thanks', 'one', 'used', 'like', 'work', 'voltage', 'know', 'vcr']
+            };
+
+            // --- MODEL SHOWDOWN CHART ---
+            const ctx = document.getElementById('modelAccuracyChart').getContext('2d');
+            const modelAccuracyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: modelData.labels,
+                    datasets: [{
+                        label: 'Cross-Validation Accuracy (%)',
+                        data: modelData.accuracies,
+                        backgroundColor: [
+                            'rgba(165, 180, 252, 0.6)',
+                            'rgba(129, 140, 248, 0.6)',
+                            'rgba(79, 70, 229, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgb(165, 180, 252)',
+                            'rgb(129, 140, 248)',
+                            'rgb(79, 70, 229)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            min: 90,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Accuracy (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Accuracy: ${context.raw.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- CONFUSION MATRIX ---
+            const matrixContainer = document.getElementById('confusionMatrix');
+            let matrixHTML = '<div class="grid grid-cols-4 gap-1">';
+            // Header
+            matrixHTML += '<div class="font-bold text-slate-500">↓ True / → Predicted</div>';
+            matrixLabels.forEach(label => {
+                matrixHTML += `<div class="font-bold text-slate-700">${label}</div>`;
+            });
+            // Rows
+            confusionMatrixData.forEach((row, i) => {
+                matrixHTML += `<div class="font-bold text-slate-700 flex items-center justify-center">${matrixLabels[i]}</div>`;
+                row.forEach((value, j) => {
+                    let bgColor = 'bg-slate-100';
+                    if (i === j) { // Correct predictions
+                        if (value > 180) bgColor = 'bg-indigo-500 text-white';
+                        else if (value > 150) bgColor = 'bg-indigo-400 text-white';
+                        else bgColor = 'bg-indigo-300 text-white';
+                    } else { // Incorrect predictions
+                        if (value > 5) bgColor = 'bg-red-300';
+                        else if (value > 0) bgColor = 'bg-red-200';
+                    }
+                    matrixHTML += `<div class="${bgColor} p-3 rounded-md font-mono font-bold">${value}</div>`;
+                });
+            });
+            matrixHTML += '</div>';
+            matrixContainer.innerHTML = matrixHTML;
+
+            // --- KEYWORD LISTS ---
+            document.getElementById('sportsKeywords').innerHTML = keywordData.sports.map(k => `<li>- ${k}</li>`).join('');
+            document.getElementById('politicsKeywords').innerHTML = keywordData.politics.map(k => `<li>- ${k}</li>`).join('');
+            document.getElementById('techKeywords').innerHTML = keywordData.tech.map(k => `<li>- ${k}</li>`).join('');
+
+            // --- INTERACTIVE DEMO ---
+            const classifyBtn = document.getElementById('classifyBtn');
+            const textInput = document.getElementById('textInput');
+            const resultDiv = document.getElementById('classificationResult');
+            const confidenceDiv = document.getElementById('confidence');
+            const keywordsDiv = document.getElementById('foundKeywords');
+            
+            textInput.value = "The government passed a new law related to encryption keys.";
+
+            classifyBtn.addEventListener('click', () => {
+                const text = textInput.value;
+                if (!text.trim()) {
+                    resultDiv.textContent = 'Please enter some text.';
+                    confidenceDiv.textContent = '';
+                    keywordsDiv.textContent = '';
+                    return;
+                }
+
+                const lowerText = text.toLowerCase();
+                const words = lowerText.split(/\s+/);
+
+                let scores = { Sports: 0, Politics: 0, Technology: 0 };
+                let found = { Sports: [], Politics: [], Technology: [] };
+                
+                keywordData.sports.forEach(kw => {
+                    if (lowerText.includes(kw)) {
+                        scores.Sports++;
+                        if (!found.Sports.includes(kw)) found.Sports.push(kw);
+                    }
+                });
+                keywordData.politics.forEach(kw => {
+                    if (lowerText.includes(kw)) {
+                        scores.Politics++;
+                        if (!found.Politics.includes(kw)) found.Politics.push(kw);
+                    }
+                });
+                keywordData.tech.forEach(kw => {
+                    if (lowerText.includes(kw)) {
+                        scores.Technology++;
+                        if (!found.Technology.includes(kw)) found.Technology.push(kw);
+                    }
+                });
+
+                let bestCategory = 'None';
+                let maxScore = 0;
+                for (const category in scores) {
+                    if (scores[category] > maxScore) {
+                        maxScore = scores[category];
+                        bestCategory = category;
+                    }
+                }
+
+                if (maxScore === 0) {
+                    resultDiv.textContent = 'Undetermined';
+                    resultDiv.className = 'text-2xl font-bold text-slate-700';
+                    confidenceDiv.textContent = 'Not enough keywords found to make a confident prediction.';
+                    keywordsDiv.innerHTML = text;
+                } else {
+                    const totalMatches = scores.Sports + scores.Politics + scores.Technology;
+                    const confidence = (maxScore / totalMatches) * 100;
+
+                    resultDiv.textContent = bestCategory;
+                    confidenceDiv.textContent = `Confidence: ${confidence.toFixed(0)}%`;
+
+                    let categoryClass = '';
+                    if (bestCategory === 'Sports') categoryClass = 'text-amber-600';
+                    else if (bestCategory === 'Politics') categoryClass = 'text-sky-600';
+                    else if (bestCategory === 'Technology') categoryClass = 'text-indigo-600';
+                    resultDiv.className = `text-2xl font-bold ${categoryClass}`;
+                    
+                    const allFoundKeywords = [...found.Sports, ...found.Politics, ...found.Tech];
+                    let highlightedText = text;
+                    allFoundKeywords.forEach(kw => {
+                        const regex = new RegExp(`\\b(${kw})\\b`, 'gi');
+                        highlightedText = highlightedText.replace(regex, `<span class="highlight">$1</span>`);
+                    });
+                    keywordsDiv.innerHTML = highlightedText;
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
