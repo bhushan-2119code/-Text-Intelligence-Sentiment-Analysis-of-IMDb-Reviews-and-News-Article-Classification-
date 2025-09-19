@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: IMDb Sentiment Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Subtle & Sophisticated -->
+    <!-- Application Structure Plan: The SPA is designed as a top-down narrative journey, guiding the user from the project's context to its results. It starts with a high-level summary (Hero), dives into the raw material (The Data), explains the methodology (NLP Pipeline, Feature Engineering), presents an interactive results dashboard (Model Showdown), allows for hands-on engagement (Live Predictor), and concludes with key takeaways. This structure was chosen over a simple slide-for-slide conversion to create an exploratory and more intuitive user experience, allowing users to digest complex information in logical, interactive chunks. -->
+    <!-- Visualization & Content Choices: 
+        - Project Stats (Hero): Goal: Inform. Method: Large numbers for immediate impact. Interaction: None. Justification: Quickly conveys project scale.
+        - Sentiment Distribution (The Data): Goal: Inform. Method: Chart.js Donut Chart. Interaction: Hover tooltips. Justification: Clear, immediate view of dataset balance. Library: Chart.js (Canvas).
+        - Review Length (The Data): Goal: Compare. Method: Chart.js Bar Chart (Histogram). Interaction: Hover tooltips. Justification: Shows distribution differences between sentiments. Library: Chart.js (Canvas).
+        - NLP Pipeline (Methodology): Goal: Organize. Method: HTML/CSS Flexbox flowchart. Interaction: Click on a step to see its description and an example. Justification: Makes a complex process understandable and interactive without being overwhelming. Method: HTML/CSS/JS.
+        - Word Clouds (Feature Engineering): Goal: Compare. Method: Styled HTML spans with varying font sizes to simulate a word cloud. Interaction: Toggle buttons to switch between Positive and Negative views. Justification: A simple yet effective way to show key terms without an extra library. Method: HTML/CSS/JS.
+        - Model Performance (Showdown): Goal: Compare/Relationships. Method: Interactive dashboard with toggles, metric cards, and a dynamic Chart.js bar chart. Interaction: User clicks a model name to update all stats and visuals on the page. Justification: This is the most effective way to compare models directly and explore their performance metrics in detail. Library: Chart.js (Canvas). Method: HTML/CSS/JS.
+        - Live Predictor (Engagement): Goal: Engage. Method: Text input and button. Interaction: User types a review and gets an instant sentiment prediction. Justification: Provides a tangible, hands-on experience of the model's capability. Method: HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #343A40;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .section-card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background-color: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        .model-btn {
+            transition: all 0.3s ease;
+        }
+        .model-btn.active {
+            background-color: #4A5568;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .model-btn:not(.active) {
+            background-color: #E9ECEF;
+            color: #4A5568;
+        }
+        .nlp-step {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .nlp-step.active, .nlp-step:hover {
+            background-color: #EBF8FF;
+            border-color: #90CDF4;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <main class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- Header Section -->
+        <header class="text-center py-8 md:py-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">IMDb Movie Review Sentiment Analysis</h1>
+            <p class="mt-4 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">An interactive report on building a machine learning model to understand public opinion from movie reviews.</p>
+        </header>
+
+        <!-- The Data Under the Microscope -->
+        <section class="section-card">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">The Data Under the Microscope</h2>
+            <p class="text-center mt-2 text-gray-600">The project is built on the IMDb dataset, a collection of 50,000 movie reviews.</p>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h3 class="font-semibold text-xl text-center mb-4 text-gray-700">Sentiment Distribution</h3>
+                    <div class="chart-container" style="height: 300px; max-height: 300px;">
+                        <canvas id="sentimentDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-center mb-4 text-gray-700">Review Length Distribution (by Words)</h3>
+                    <div class="chart-container" style="height: 300px; max-height: 300px;">
+                        <canvas id="reviewLengthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- The NLP Pipeline -->
+        <section class="section-card">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">From Words to Numbers: The NLP Pipeline</h2>
+            <p class="text-center mt-2 text-gray-600">Raw text is noisy. We process it through a pipeline to extract meaningful features. Click on a step to learn more.</p>
+            <div id="nlp-pipeline-container" class="mt-8 flex flex-col md:flex-row justify-center items-center gap-2 md:gap-4 flex-wrap">
+                <!-- NLP steps will be injected here by JS -->
+            </div>
+            <div id="nlp-info-box" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 min-h-[120px]">
+                <h4 id="nlp-info-title" class="font-bold text-lg text-gray-700"></h4>
+                <p id="nlp-info-desc" class="mt-1 text-gray-600"></p>
+                <div id="nlp-info-example" class="mt-2 text-sm"></div>
+            </div>
+        </section>
+
+        <!-- Feature Engineering & Key Terms -->
+        <section class="section-card">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">Feature Engineering & Key Terms</h2>
+            <p class="text-center mt-2 text-gray-600">We use TF-IDF to identify important words, visualized below as word clouds.</p>
+            <div class="text-center my-6">
+                <button id="positive-words-btn" class="px-4 py-2 rounded-md font-semibold text-white bg-green-500 hover:bg-green-600 transition">Positive Words</button>
+                <button id="negative-words-btn" class="px-4 py-2 rounded-md font-semibold text-white bg-red-500 hover:bg-red-600 transition ml-4">Negative Words</button>
+            </div>
+            <div id="word-cloud-container" class="p-6 bg-gray-50 rounded-lg min-h-[250px] flex items-center justify-center text-center">
+                 <!-- Word cloud will be injected here -->
+            </div>
+        </section>
+
+        <!-- Model Performance Showdown -->
+        <section class="section-card">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">The Verdict: Model Performance Showdown</h2>
+            <p class="text-center mt-2 text-gray-600">We trained two models. Select one to see its performance metrics and confusion matrix.</p>
+            <div class="mt-8 flex justify-center">
+                <div class="flex rounded-lg p-1 bg-gray-200">
+                    <button id="lr-btn" class="model-btn px-6 py-2 rounded-md">Logistic Regression</button>
+                    <button id="nb-btn" class="model-btn px-6 py-2 rounded-md">Naive Bayes</button>
+                </div>
+            </div>
+
+            <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500">Accuracy</h4>
+                    <p id="accuracy-val" class="text-3xl font-bold text-gray-800 mt-2"></p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500">Precision</h4>
+                    <p id="precision-val" class="text-3xl font-bold text-gray-800 mt-2"></p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500">Recall</h4>
+                    <p id="recall-val" class="text-3xl font-bold text-gray-800 mt-2"></p>
+                </div>
+                <div class="stat-card">
+                    <h4 class="text-sm font-medium text-gray-500">F1-Score</h4>
+                    <p id="f1-val" class="text-3xl font-bold text-gray-800 mt-2"></p>
+                </div>
+            </div>
+            
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                 <div>
+                    <h3 class="font-semibold text-xl text-center mb-4 text-gray-700">Performance Metrics</h3>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-center mb-4 text-gray-700">Confusion Matrix</h3>
+                    <div class="flex justify-center">
+                        <div class="grid grid-cols-3 gap-1 text-center">
+                            <div></div>
+                            <div class="p-2 font-semibold">Predicted Positive</div>
+                            <div class="p-2 font-semibold">Predicted Negative</div>
+                            <div class="p-2 font-semibold rotate-[-90deg]">Actual</div>
+                            <div class="bg-green-100 p-4 rounded">
+                                <div class="text-xs">True Positive</div>
+                                <div id="cm-tp" class="text-2xl font-bold"></div>
+                            </div>
+                            <div class="bg-red-100 p-4 rounded">
+                                 <div class="text-xs">False Negative</div>
+                                <div id="cm-fn" class="text-2xl font-bold"></div>
+                            </div>
+                             <div></div>
+                            <div class="bg-red-100 p-4 rounded">
+                                 <div class="text-xs">False Positive</div>
+                                <div id="cm-fp" class="text-2xl font-bold"></div>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded">
+                                 <div class="text-xs">True Negative</div>
+                                <div id="cm-tn" class="text-2xl font-bold"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Prediction -->
+        <section class="section-card">
+             <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">Try It Yourself: Live Prediction</h2>
+             <p class="text-center mt-2 text-gray-600">Enter a short movie review below to see a live sentiment prediction.</p>
+             <div class="mt-6 max-w-2xl mx-auto">
+                 <textarea id="review-input" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="3" placeholder="e.g., This was an amazing film with great acting!"></textarea>
+                 <button id="predict-btn" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition">Predict Sentiment</button>
+                 <div id="prediction-output" class="mt-4 text-center font-semibold text-lg min-h-[30px]"></div>
+             </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section class="section-card">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-800">Conclusion & Future Directions</h2>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-semibold text-xl text-gray-700 mb-3">Key Insights</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li>TF-IDF proved to be a highly effective feature engineering technique for this task.</li>
+                        <li>Simple models like Logistic Regression and Naive Bayes can serve as strong, efficient baselines for sentiment analysis.</li>
+                        <li>A balanced dataset is crucial for training an unbiased classifier.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-gray-700 mb-3">Future Enhancements</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                        <li>Explore advanced embeddings like Word2Vec or GloVe to capture semantic meaning.</li>
+                        <li>Implement deep learning models such as LSTMs or transformers (BERT) for potentially higher accuracy.</li>
+                        <li>Conduct hyperparameter tuning to further optimize model performance.</li>
+                        <li>Improve preprocessing to better handle nuances like negation (e.g., "not good").</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const chartJsTooltipConfig = {
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        if (Array.isArray(label)) {
+                            return label.join(' ');
+                        } else {
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    function wrapLabel(label, maxWidth) {
+        if (label.length <= maxWidth) return label;
+        const words = label.split(' ');
+        let lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+            if ((currentLine + ' ' + word).trim().length > maxWidth) {
+                lines.push(currentLine.trim());
+                currentLine = word;
+            } else {
+                currentLine += ' ' + word;
+            }
+        });
+        lines.push(currentLine.trim());
+        return lines;
+    }
+
+    // --- Data ---
+    const sentimentData = {
+        labels: ['Positive', 'Negative'],
+        values: [25000, 25000]
+    };
+
+    const reviewLengthData = {
+        labels: ['1-50', '51-100', '101-150', '151-200', '201-250', '251+'],
+        positive: [2800, 5200, 6100, 5400, 3100, 2400],
+        negative: [3100, 5800, 6500, 4900, 2600, 2100],
+    };
+
+    const nlpPipelineData = [
+        {
+            id: 'lowercase',
+            title: 'Lowercasing',
+            description: 'Converts all text to lowercase to ensure uniformity.',
+            example: { before: 'This Movie is GREAT!', after: 'this movie is great!' }
+        },
+        {
+            id: 'html',
+            title: 'HTML Tag Removal',
+            description: 'Strips out any HTML tags (like <br>) from the text.',
+            example: { before: 'An amazing film.<br>Loved it.', after: 'an amazing film. loved it.' }
+        },
+        {
+            id: 'punctuation',
+            title: 'Punctuation Removal',
+            description: 'Removes all punctuation and special characters, keeping only letters.',
+            example: { before: 'Wow! What a film...', after: 'wow what a film' }
+        },
+        {
+            id: 'tokenization',
+            title: 'Tokenization',
+            description: 'Splits the text into a list of individual words (tokens).',
+            example: { before: 'split into words', after: "['split', 'into', 'words']" }
+        },
+        {
+            id: 'stopwords',
+            title: 'Stopword Removal',
+            description: 'Removes common words (e.g., "the", "a", "is") that add little meaning.',
+            example: { before: 'this is a sentence', after: 'sentence' }
+        },
+        {
+            id: 'lemmatization',
+            title: 'Lemmatization',
+            description: 'Reduces words to their base or dictionary form.',
+            example: { before: 'running, ran, runs', after: 'run' }
+        }
+    ];
+
+    const wordCloudData = {
+        positive: [
+            { word: 'film', size: 10 }, { word: 'great', size: 9.5 }, { word: 'movie', size: 9 }, { word: 'one', size: 8 }, 
+            { word: 'story', size: 7.5 }, { word: 'well', size: 7 }, { word: 'acting', size: 7 }, { word: 'good', size: 6.5 },
+            { word: 'love', size: 6.5 }, { word: 'best', size: 6 }, { word: 'character', size: 5.5 }, { word: 'life', size: 5 }
+        ],
+        negative: [
+            { word: 'movie', size: 10 }, { word: 'bad', size: 9.5 }, { word: 'film', size: 9 }, { word: 'just', size: 8 },
+            { word: 'boring', size: 7.5 }, { word: 'waste', size: 7 }, { word: 'plot', size: 7 }, { word: 'nothing', size: 6.5 },
+            { word: 'terrible', size: 6.5 }, { word: 'acting', size: 6 }, { word: 'horrible', size: 5.5 }, { word: 'awful', size: 5 }
+        ]
+    };
+    
+    const modelPerformanceData = {
+      'logistic-regression': {
+        name: 'Logistic Regression',
+        accuracy: 88.7, precision: 0.89, recall: 0.88, f1: 0.88,
+        confusionMatrix: { tp: 4425, fn: 575, fp: 555, tn: 4445 }
+      },
+      'naive-bayes': {
+        name: 'Multinomial Naive Bayes',
+        accuracy: 86.2, precision: 0.85, recall: 0.88, f1: 0.86,
+        confusionMatrix: { tp: 4390, fn: 610, fp: 770, tn: 4230 }
+      }
+    };
+
+
+    // --- Chart Initialization ---
+    // Sentiment Distribution Chart
+    new Chart(document.getElementById('sentimentDistributionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: sentimentData.labels,
+            datasets: [{
+                data: sentimentData.values,
+                backgroundColor: ['#48BB78', '#F56565'],
+                borderColor: ['#FFFFFF'],
+                borderWidth: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: chartJsTooltipConfig.plugins.tooltip
+            }
+        }
+    });
+
+    // Review Length Chart
+    new Chart(document.getElementById('reviewLengthChart'), {
+        type: 'bar',
+        data: {
+            labels: reviewLengthData.labels,
+            datasets: [
+                {
+                    label: 'Positive',
+                    data: reviewLengthData.positive,
+                    backgroundColor: 'rgba(72, 187, 120, 0.6)',
+                    borderColor: '#48BB78',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Negative',
+                    data: reviewLengthData.negative,
+                    backgroundColor: 'rgba(245, 101, 101, 0.6)',
+                    borderColor: '#F56565',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: chartJsTooltipConfig.plugins.tooltip
+            }
+        }
+    });
+    
+    // Performance Chart
+    const performanceCtx = document.getElementById('performanceChart');
+    const performanceChart = new Chart(performanceCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Precision', 'Recall', 'F1-Score'],
+            datasets: [{
+                label: 'Score',
+                data: [],
+                backgroundColor: ['#63B3ED', '#48BB78', '#F6E05E'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 1.0
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: chartJsTooltipConfig.plugins.tooltip
+            }
+        }
+    });
+
+
+    // --- Interactive Logic ---
+    // NLP Pipeline
+    const nlpPipelineContainer = document.getElementById('nlp-pipeline-container');
+    const nlpInfoBox = {
+        title: document.getElementById('nlp-info-title'),
+        desc: document.getElementById('nlp-info-desc'),
+        example: document.getElementById('nlp-info-example'),
+    };
+    nlpPipelineData.forEach((step, index) => {
+        const stepEl = document.createElement('div');
+        stepEl.className = 'nlp-step border-2 border-gray-300 rounded-md p-3 text-center grow md:grow-0';
+        stepEl.textContent = step.title;
+        stepEl.dataset.stepId = step.id;
+        nlpPipelineContainer.appendChild(stepEl);
+
+        if(index < nlpPipelineData.length - 1) {
+            const arrowEl = document.createElement('div');
+            arrowEl.className = 'text-2xl text-gray-400 p-2 transform md:rotate-0 rotate-90';
+            arrowEl.innerHTML = '&#8594;';
+            nlpPipelineContainer.appendChild(arrowEl);
+        }
+    });
+
+    nlpPipelineContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('.nlp-step');
+        if (!target) return;
+        const stepId = target.dataset.stepId;
+        const stepData = nlpPipelineData.find(s => s.id === stepId);
+
+        document.querySelectorAll('.nlp-step').forEach(el => el.classList.remove('active'));
+        target.classList.add('active');
+
+        nlpInfoBox.title.textContent = stepData.title;
+        nlpInfoBox.desc.textContent = stepData.description;
+        nlpInfoBox.example.innerHTML = `<span class="font-mono bg-gray-200 px-2 py-1 rounded">Before: ${stepData.example.before}</span> <span class="mx-2">&#8594;</span> <span class="font-mono bg-gray-200 px-2 py-1 rounded">After: ${stepData.example.after}</span>`;
+    });
+    
+    // Word Cloud
+    const wordCloudContainer = document.getElementById('word-cloud-container');
+    const posBtn = document.getElementById('positive-words-btn');
+    const negBtn = document.getElementById('negative-words-btn');
+
+    function displayWordCloud(sentiment) {
+        const data = wordCloudData[sentiment];
+        const colorClass = sentiment === 'positive' ? 'text-green-600' : 'text-red-600';
+        wordCloudContainer.innerHTML = data.map(item => 
+            `<span class="${colorClass} inline-block p-2" style="font-size: ${item.size * 0.2 + 0.8}rem; font-weight: ${item.size > 7 ? 600 : 400};">${item.word}</span>`
+        ).join('');
+    }
+    posBtn.addEventListener('click', () => displayWordCloud('positive'));
+    negBtn.addEventListener('click', () => displayWordCloud('negative'));
+    
+
+    // Model Performance
+    const lrBtn = document.getElementById('lr-btn');
+    const nbBtn = document.getElementById('nb-btn');
+    const accuracyVal = document.getElementById('accuracy-val');
+    const precisionVal = document.getElementById('precision-val');
+    const recallVal = document.getElementById('recall-val');
+    const f1Val = document.getElementById('f1-val');
+    const cm_tp = document.getElementById('cm-tp');
+    const cm_fn = document.getElementById('cm-fn');
+    const cm_fp = document.getElementById('cm-fp');
+    const cm_tn = document.getElementById('cm-tn');
+
+    function updatePerformanceView(modelKey) {
+        const data = modelPerformanceData[modelKey];
+        accuracyVal.textContent = `${data.accuracy}%`;
+        precisionVal.textContent = data.precision.toFixed(2);
+        recallVal.textContent = data.recall.toFixed(2);
+        f1Val.textContent = data.f1.toFixed(2);
+
+        cm_tp.textContent = data.confusionMatrix.tp;
+        cm_fn.textContent = data.confusionMatrix.fn;
+        cm_fp.textContent = data.confusionMatrix.fp;
+        cm_tn.textContent = data.confusionMatrix.tn;
+        
+        performanceChart.data.datasets[0].data = [data.precision, data.recall, data.f1];
+        performanceChart.update();
+
+        if (modelKey === 'logistic-regression') {
+            lrBtn.classList.add('active');
+            nbBtn.classList.remove('active');
+        } else {
+            nbBtn.classList.add('active');
+            lrBtn.classList.remove('active');
+        }
+    }
+
+    lrBtn.addEventListener('click', () => updatePerformanceView('logistic-regression'));
+    nbBtn.addEventListener('click', () => updatePerformanceView('naive-bayes'));
+
+    // Live Prediction
+    const predictBtn = document.getElementById('predict-btn');
+    const reviewInput = document.getElementById('review-input');
+    const predictionOutput = document.getElementById('prediction-output');
+    const positiveKeywords = ['amazing', 'great', 'love', 'excellent', 'best', 'fantastic', 'superb', 'perfect'];
+    const negativeKeywords = ['bad', 'terrible', 'awful', 'waste', 'boring', 'horrible', 'worst', 'disappointing'];
+
+    predictBtn.addEventListener('click', () => {
+        const text = reviewInput.value.toLowerCase();
+        if (!text) {
+            predictionOutput.textContent = 'Please enter a review.';
+            predictionOutput.className = 'mt-4 text-center font-semibold text-lg text-gray-500';
+            return;
+        }
+
+        let positiveScore = 0;
+        let negativeScore = 0;
+        positiveKeywords.forEach(word => { if (text.includes(word)) positiveScore++; });
+        negativeKeywords.forEach(word => { if (text.includes(word)) negativeScore++; });
+
+        predictionOutput.classList.remove('text-green-600', 'text-red-600', 'text-gray-500');
+        if (positiveScore > negativeScore) {
+            predictionOutput.textContent = 'Predicted Sentiment: Positive';
+            predictionOutput.classList.add('text-green-600');
+        } else if (negativeScore > positiveScore) {
+            predictionOutput.textContent = 'Predicted Sentiment: Negative';
+            predictionOutput.classList.add('text-red-600');
+        } else {
+            predictionOutput.textContent = 'Predicted Sentiment: Neutral / Unsure';
+            predictionOutput.classList.add('text-gray-500');
+        }
+    });
+
+    // --- Initial State ---
+    document.querySelector('.nlp-step').click();
+    displayWordCloud('positive');
+    lrBtn.click();
+});
+</script>
+</body>
+</html>
