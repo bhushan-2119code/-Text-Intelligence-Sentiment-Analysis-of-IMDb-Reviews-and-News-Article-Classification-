@@ -7,8 +7,12 @@ PART - A
 
 [index A.html](https://github.com/user-attachments/files/22424434/index.A.html)
 Insights and Takeaways
-The project demonstrates a practical application of Natural Language Processing (NLP) and sentiment analysis.
 
-It highlights skills in data visualization, with a focus on creating clear and intuitive dashboards.
+PART - B
 
-By using a live predictor, the project shows an understanding of how to build and deploy a machine learning model for a real-world application
+[News_Article_Classification_Report.pdf](https://github.com/user-attachments/files/22424555/News_Article_Classification_Report.pdf)
+[Python News Classifier Project - Colab.pdf](https://github.com/user-attachments/files/22424554/Python.News.Classifier.Project.-.Colab.pdf)
+##* Open index.html: Open the index.html file in your web browser to view the interactive dashboard.
+
+[index B.html](https://github.com/user-attachments/files/22424559/index.B.html)
+[Python_News_Classifier_Project.ipynb](https://github.com/user-attachments/files/22424562/Python_News_Classifier_Project.ipynb)
